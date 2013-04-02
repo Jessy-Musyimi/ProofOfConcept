@@ -1,4 +1,4 @@
-﻿using Aspose.Pdf;
+﻿﻿using Aspose.Pdf;
 using Aspose.Words;
 using Aspose.Words.Markup;
 using System;
@@ -53,33 +53,30 @@ namespace ns
                     //select Globals/Keys/Key 
                    globalsKeywordsList = new List<string>();
                    XmlNodeList keyNodes = controlXMl.SelectNodes("//pdbot:Globals//pdbot:Keys//pdbot:Key", nsmngr);
-                   //Console.WriteLine("Global Keys");
-                   //Console.WriteLine("=================");
+                 
                    foreach (XmlNode KeyNode in keyNodes)
                     {
                         string keyword = KeyNode["Keyword"].InnerText;
                         string value = KeyNode["Value"].InnerText;
                         string KeywordAndValue = keyword + "|" + value;
                         globalsKeywordsList.Add(KeywordAndValue);
-                        //Console.WriteLine(KeywordAndValue);
+                        
                     }
                     writeToLog("Global keywords and value read");
-
                     //---------------------------------------------------------------------------------------------------------------------------
+                    
                     //get Global sections
                     //select Globals/Sections/section 
                     List<string> sectionsList = new List<string>();
                     XmlNodeList sectionNodes = controlXMl.SelectNodes("//pdbot:Globals//pdbot:Sections//pdbot:Section", nsmngr);
-                    //Console.WriteLine("Global Sections");
-                    //Console.WriteLine("=================");
+                    
                     foreach (XmlNode sectionNode in sectionNodes)
                     {
                         string name = sectionNode["Name"].InnerText;
                         sectionsList.Add(name);
-                        //Console.WriteLine(name);
+                       
                     }
                     writeToLog("Global Section names read");
-
                     //---------------------------------------------------------------------------------------------------------------------------
 
                     //get all documents in the control xml
