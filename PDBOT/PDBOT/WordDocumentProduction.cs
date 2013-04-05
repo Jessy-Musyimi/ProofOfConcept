@@ -17,6 +17,7 @@ namespace pdbot
     {
         
         static Stopwatch stopwatch = new Stopwatch();
+        static string outputFile = null;
         static void Main(string[] args)
         {
             
@@ -32,9 +33,7 @@ namespace pdbot
             asposePdfLisence.SetLicense("Aspose.Pdf.lic");
 
             string hflDocumentPath = null;
-            //int hflDocPageNumber = 0;
-            //int docPageNumber = 0;
-            string path = @"C:\Users\51210\Desktop\Customers\SG Finans\Oppgraderings Prosjekt SG Finans\BL0019\pdbot_control.xml";
+            string path = @"C:\Users\51210\Desktop\Customers\SG Finans\Oppgraderings Prosjekt SG Finans\BL5099\pdbot_control.xml";
             XmlDocument controlXMl = null;
             XmlNamespaceManager nsmngr = null;
             
@@ -70,8 +69,7 @@ namespace pdbot
                     //select Globals/Keys/Key 
                    globalsKeywordsList = new List<string>();
                    XmlNodeList keyNodes = controlXMl.SelectNodes("//pdbot:Globals//pdbot:Keys//pdbot:Key", nsmngr);
-                   //Console.WriteLine(keyNodes.Count);
-                   //Console.ReadKey();
+                   
                    if (keyNodes.Count != 0)
                    {
                        foreach (XmlNode KeyNode in keyNodes)
@@ -175,8 +173,7 @@ namespace pdbot
                         //select Docs/Doc/DocContent/Sections/Section                         
                         XmlNodeList docSectionNodes = documentNode.SelectNodes("pdbot:DocContent//pdbot:Sections//pdbot:Section", nsmngr);
                         if (docSectionNodes.Count != 0)
-                        {
-                            
+                        {                            
                             foreach (XmlNode docSectionNode in docSectionNodes)
                             {
                                 string name = docSectionNode["Name"].InnerText;
@@ -193,23 +190,24 @@ namespace pdbot
                        
                         //get PageWatermarkings 
                         //select Docs/Doc/PageWatermarkings/PageWatermarking                    
-                        XmlNodeList pageWatermarkingsNodes = documentNode.SelectNodes("pdbot:PageWatermarkings//pdbot:PageWatermarking", nsmngr);
-                        
-                        ////hflDocumentPath = pageWatermarkingsNodes["ResourceFile"].InnerText;
-                        
-                        //get watermark values
-                        List<string> waterMarkings = new List<string>();
-                        foreach (XmlNode watermarkNode in pageWatermarkingsNodes)
-                        {
-                            hflDocumentPath = watermarkNode["ResourceFile"].InnerText;
-                            string wmark = watermarkNode["Watermark"].InnerText;
-                           
-                            waterMarkings.Add(wmark);
+                        XmlNode hflPageWatermarkingsNodes = documentNode.SelectSingleNode("pdbot:PageWatermarkings//pdbot:PageWatermarking", nsmngr);
+                        hflDocumentPath = hflPageWatermarkingsNodes["ResourceFile"].InnerText;
 
-                            Console.WriteLine(wmark);
-                            Console.ReadKey();
-                        }                                         
-                        writeToLog("PageWatermarkings dokument variables read");
+                        //select Docs/Doc/PageWatermarkings/PageWatermarking/Watermark  
+                        XmlNodeList pageWatermarkingsNodes = documentNode.SelectNodes("pdbot:PageWatermarkings//pdbot:PageWatermarking//pdbot:Watermark", nsmngr);
+                        
+                        List<string> waterMarkings = new List<string>();
+                        //get watermark values
+                        if (pageWatermarkingsNodes.Count != 0)
+                        {  
+                            foreach (XmlNode watermarkNode in pageWatermarkingsNodes)
+                            {
+                                string wmark = watermarkNode.InnerText;
+
+                                waterMarkings.Add(wmark);
+                            }
+                            writeToLog("PageWatermarkings dokument variables read");
+                        }
                         //---------------------------------------------------------------------------------------------------------------------------
                        
                         //get PageInserts 
@@ -246,7 +244,8 @@ namespace pdbot
                             //Read RepositoryTemplate
                             string keyword = null;
                             string value = null;
-                            docTemplate = new Aspose.Words.Document(@"C:\Users\51210\Desktop\Customers\SG Finans\Oppgraderings Prosjekt SG Finans\BL0019\BL0019.docx");
+                            repositoryTemplate = repositoryTemplate.Replace("xml", "docx");
+                            docTemplate = new Aspose.Words.Document(repositoryTemplate);
                             writeToLog("Document template " + docTemplate.OriginalFileName.ToString() + " loaded succesfully");
                             //--------------------------------------------------------------------------------------------------------------------------
                             
@@ -260,8 +259,7 @@ namespace pdbot
                                     {
 
                                         var sdt = ccntrl as StructuredDocumentTag;
-                                        var section = sdt.Title;
-                                        Console.WriteLine("crap");
+                                        var section = sdt.Title;                                        
                                         if (!sectionsList.Contains(section))
                                         {
                                             sdt.Remove();
@@ -273,58 +271,67 @@ namespace pdbot
 
                                 //loop through all the fields in the document and replace content with values from control xml:
                                 //replace word template variables/keywords with document values
-                                foreach (var key in documentKeyswordsList)
+                                if (documentKeyswordsList.Count != 0)
                                 {
-                                    //split keywords and value
-                                    string[] keywordWithValues = key.Split('|');
+                                    foreach (var key in documentKeyswordsList)
+                                    {
+                                        //split keywords and value
+                                        string[] keywordWithValues = key.Split('|');
 
-                                     keyword = keywordWithValues[keywordWithValues.Length -2];
-                                     value = keywordWithValues[keywordWithValues.Length - 1];
+                                        keyword = keywordWithValues[keywordWithValues.Length - 2];
+                                        value = keywordWithValues[keywordWithValues.Length - 1];
 
-                                     //loop through all the fields in the document and replace content with values from control xml:
-                                     docTemplate.Range.Replace(keyword, value, true, false);
-                                }
-                                writeToLog("Document template variables replaced with document keywords and values");  
-                                //---------------------------------------------------------------------------------------------------------------------------
-
+                                        //loop through all the fields in the document and replace content with values from control xml:
+                                        docTemplate.Range.Replace(keyword, value, true, false);
+                                    }
+                                    writeToLog("Document template variables replaced with document keywords and values");
+                                    //---------------------------------------------------------------------------------------------------------------------------
+                                 }
+                                
                                 
                                 //replace word template variables/keywords with global document values
-                                foreach (var key in globalsKeywordsList)
+                                if (globalsKeywordsList.Count != 0)
                                 {
-                                    //split keywords and value
-                                    string[] keywordWithValues = key.Split('|');
+                                    foreach (var key in globalsKeywordsList)
+                                    {
+                                        //split keywords and value
+                                        string[] keywordWithValues = key.Split('|');
 
-                                    keyword = keywordWithValues[keywordWithValues.Length - 2];
-                                    value = keywordWithValues[keywordWithValues.Length - 1];    
-                                    
-                                    docTemplate.Range.Replace(keyword, value, true, false);
+                                        keyword = keywordWithValues[keywordWithValues.Length - 2];
+                                        value = keywordWithValues[keywordWithValues.Length - 1];
+
+                                        docTemplate.Range.Replace(keyword, value, true, false);
+                                    }
+                                    writeToLog("Document template variables replaced with global keywords and values");
                                 }
-                                writeToLog("Document template variables replaced with global keywords and values"); 
                                 //---------------------------------------------------------------------------------------------------------------------------
 
 
                                 //replace word template paragraphs variables/keywords with document paragraphs values from control xml
-                                foreach (var key in paragraphKeywordsList)
+                                if (paragraphKeywordsList.Count != 0)
                                 {
-                                    //split keywords and value
-                                    string[] keywordWithValues = key.Split('|');
-
-                                    keyword = keywordWithValues[keywordWithValues.Length - 2];
-                                    value = keywordWithValues[keywordWithValues.Length - 1];
-                                                                        
-                                    //add a line break in paragraphs with line breaks
-                                    if (value.Contains("\\n"))
+                                    foreach (var key in paragraphKeywordsList)
                                     {
-                                      string paragraphText = value.Replace("\\n", ControlChar.LineBreak);
+                                        //split keywords and value
+                                        string[] keywordWithValues = key.Split('|');
 
-                                      docTemplate.Range.Replace(keyword, paragraphText, true, false);
+                                        keyword = keywordWithValues[keywordWithValues.Length - 2];
+                                        value = keywordWithValues[keywordWithValues.Length - 1];
+
+                                        //add a line break in paragraphs with line breaks
+                                        if (value.Contains("\\n"))
+                                        {
+                                            string paragraphText = value.Replace("\\n", ControlChar.LineBreak);
+
+                                            docTemplate.Range.Replace(keyword, paragraphText, true, false);
+                                        }
+                                        else
+                                        {
+                                            docTemplate.Range.Replace(keyword, value, true, false);
+                                        }
                                     }
-                                    else
-                                    {
-                                        docTemplate.Range.Replace(keyword, value, true, false);
-                                    }                             
+                                    writeToLog("Document template paragraph variables replaced with paragraoh keywords and values");
                                 }
-                                writeToLog("Document template paragraph variables replaced with paragraoh keywords and values"); 
                                 //---------------------------------------------------------------------------------------------------------------------------
                                 
                                 //Table building!!!!------------------------------------
@@ -372,7 +379,7 @@ namespace pdbot
                                     string name = copyValues[copyValues.Length - 4];
                                     string stampText = copyValues[copyValues.Length - 3];
                                     string slatten = copyValues[copyValues.Length - 2];
-                                    string outputFile = copyValues[copyValues.Length - 1];
+                                    outputFile = copyValues[copyValues.Length - 1];
 
 
                                     //manage pagebreaks problem - remove pagebreak and insert sectionbreak - new page
@@ -383,6 +390,8 @@ namespace pdbot
 
                                     ////watermark and stamp final document
                                     WaterMarkDocument(outputFile, hflDocumentPath, stampText, waterMarkings);
+
+                                    
                                 }                                                          
                                 //---------------------------------------------------------------------------------------------------------------------------
  
@@ -391,7 +400,7 @@ namespace pdbot
                         }
                         catch (Exception e)
                         {
-                            Console.WriteLine("Application PDBOT failed with error " + e.Message + "." + e.StackTrace);
+                            Console.WriteLine("Application failed with error " + e.Message + "." + e.StackTrace);
                             writeToLog("Error loading document template " + docTemplate.OriginalFileName.ToString() + "," + e.StackTrace);
                             Console.ReadKey();
                         }
@@ -401,13 +410,16 @@ namespace pdbot
                 }
                 catch (Exception e)
                 {
-                    Console.WriteLine("Application PDBOT failed with error " + e.StackTrace);
+                    Console.WriteLine("Application failed with error: " + e.Message + "." + e.StackTrace);
                     writeToLog("Error reading control xml " + e.StackTrace);
                     Console.ReadKey();
                 }
-                               
 
-                //Console.ReadKey();
+                //save pdbot control xml
+                string outputfilename = outputFile.Remove(outputFile.Remove(outputFile.Length - 1).LastIndexOf('\\') + 1);
+                outputfilename = outputfilename + "pdbot_control.xml";
+
+                controlXMl.Save(outputfilename);
             }
             controlXMl = null;
 
@@ -424,7 +436,6 @@ namespace pdbot
             try
             {                             
                 document.Save(outputFile);
-
                 writeToLog("Temporary document saved " + outputFile.ToString());
             }
             catch (Exception e)
@@ -447,21 +458,21 @@ namespace pdbot
                 PdfPageStamp pageStamp = null;
                 
                 foreach (var value in watermarkingValues)
-                {
+                {                   
                     string[] waterMark = value.Split('=');
 
                     string hflDocPageNo = waterMark[waterMark.Length - 1];
                     string docPageNo = waterMark[waterMark.Length - 2];
 
-                    Console.WriteLine(hflDocPageNo + " " + docPageNo);
-                    Console.ReadKey();
+                    //Console.WriteLine(hflDocPageNo + " " + docPageNo);
+                    //Console.ReadKey();
                     int hflDocPageNumber = Convert.ToInt32(hflDocPageNo);
 
                     if (docPageNo == "[ALL]")
-                    {                        
+                    {
                         //create page stamp
                         pageStamp = new PdfPageStamp(hfl.Pages[hflDocPageNumber]);
-                        
+
                         //add stamp to all pages
                         for (int pageCount = 1; pageCount <= document.Pages.Count; pageCount++)
                         {
@@ -470,14 +481,20 @@ namespace pdbot
                         }
                     }
                     else
-                    {                        
+                    {
                         int docPageNumber = Convert.ToInt32(docPageNo);
 
                         //create page stamp
-                         pageStamp = new PdfPageStamp(hfl.Pages[hflDocPageNumber]);
+                        pageStamp = new PdfPageStamp(hfl.Pages[hflDocPageNumber]);
 
-                        //add stamp to particular page
-                        document.Pages[docPageNumber].AddStamp(pageStamp);
+
+                        if (docPageNumber <= document.Pages.Count )
+                        {
+                            //add stamp to particular page
+                            document.Pages[docPageNumber].AddStamp(pageStamp);
+                        }
+                       
+                        
                     }
 
                     
