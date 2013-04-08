@@ -282,7 +282,7 @@ namespace pdbot
                                         value = keywordWithValues[keywordWithValues.Length - 1];
 
                                         //loop through all the fields in the document and replace content with values from control xml:
-                                        docTemplate.Range.Replace(keyword, value, true, false);
+                                        docTemplate.Range.Replace(keyword, value, false, false);
                                     }
                                     writeToLog("Document template variables replaced with document keywords and values");
                                     //---------------------------------------------------------------------------------------------------------------------------
@@ -300,7 +300,7 @@ namespace pdbot
                                         keyword = keywordWithValues[keywordWithValues.Length - 2];
                                         value = keywordWithValues[keywordWithValues.Length - 1];
 
-                                        docTemplate.Range.Replace(keyword, value, true, false);
+                                        docTemplate.Range.Replace(keyword, value, false, false);
                                     }
                                     writeToLog("Document template variables replaced with global keywords and values");
                                 }
@@ -319,15 +319,18 @@ namespace pdbot
                                         value = keywordWithValues[keywordWithValues.Length - 1];
 
                                         //add a line break in paragraphs with line breaks
-                                        if (value.Contains("\\n"))
+                                        if (value.Contains(@"\n"))
                                         {
-                                            string paragraphText = value.Replace("\\n", ControlChar.LineBreak);
-
-                                            docTemplate.Range.Replace(keyword, paragraphText, true, false);
-                                        }
+                                            string[] paragraphLines = value.Split('\n');
+                                            foreach (var line in paragraphLines)
+                                            {
+                                                string paragraphText = value.Replace("\\n", ControlChar.LineBreak);
+                                                docTemplate.Range.Replace(keyword, paragraphText, false, false);
+                                            }                                         
+                                     }
                                         else
                                         {
-                                            docTemplate.Range.Replace(keyword, value, true, false);
+                                            docTemplate.Range.Replace(keyword, value, false, false);
                                         }
                                     }
                                     writeToLog("Document template paragraph variables replaced with paragraoh keywords and values");
@@ -356,9 +359,9 @@ namespace pdbot
                                         foreach (XmlNode cellKeyNode in cellKeyNodes)
                                         {
                                             string cellKey = cellKeyNode["Key"].InnerText;
-                                            string cellValue = cellKeyNode["Value"].InnerText;                                            
+                                            string cellValue = cellKeyNode["Value"].InnerText;
 
-                                            docTemplate.Range.Replace(cellKey, cellValue, true, false);
+                                            docTemplate.Range.Replace(cellKey, cellValue, false, false);
                                         }
                                         //Inserting new table row after the current row (template row):
                                         table.AppendChild(firstRow);
@@ -381,7 +384,7 @@ namespace pdbot
                                     string slatten = copyValues[copyValues.Length - 2];
                                     outputFile = copyValues[copyValues.Length - 1];
 
-
+                                    
                                     //manage pagebreaks problem - remove pagebreak and insert sectionbreak - new page
                                     RemovePageBreaks(docTemplate);
 
@@ -492,12 +495,9 @@ namespace pdbot
                         {
                             //add stamp to particular page
                             document.Pages[docPageNumber].AddStamp(pageStamp);
-                        }
-                       
+                        }                    
                         
-                    }
-
-                    
+                    }                   
                 }
 
                 if (stampText.Length > 0)
@@ -550,7 +550,7 @@ namespace pdbot
                 }
             }
            
-        }
+        }        
 
         //method for logging
         private static void writeToLog(string toLog)
