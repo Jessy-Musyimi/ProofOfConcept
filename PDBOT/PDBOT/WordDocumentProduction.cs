@@ -22,7 +22,7 @@ namespace pdbot
         {
             
             stopwatch.Start();
-
+       
             writeToLog("Application PDBOT Started...");
             Console.WriteLine("Application PDBOT Started...");            
 
@@ -33,7 +33,7 @@ namespace pdbot
             asposePdfLisence.SetLicense("Aspose.Pdf.lic");
 
             string hflDocumentPath = null;
-            string path = @"C:\Users\51210\Desktop\Customers\SG Finans\Oppgraderings Prosjekt SG Finans\BL5099\pdbot_control.xml";
+            string path = @"C:\Users\51210\Desktop\Customers\SG Finans\Oppgraderings Prosjekt SG Finans\BL0019\pdbot_control.xml";
             XmlDocument controlXMl = null;
             XmlNamespaceManager nsmngr = null;
             
@@ -324,7 +324,7 @@ namespace pdbot
                                             string[] paragraphLines = value.Split('\n');
                                             foreach (var line in paragraphLines)
                                             {
-                                                string paragraphText = value.Replace("\\n", ControlChar.LineBreak);
+                                                string paragraphText = value.Replace(@"\n", ControlChar.LineBreak);
                                                 docTemplate.Range.Replace(keyword, paragraphText, false, false);
                                             }                                         
                                      }
@@ -339,7 +339,7 @@ namespace pdbot
                                 
                                 //Table building!!!!------------------------------------
 
-                               //NB! THIS WILL ONLY WORK WITH TEMPLATE A TEMPLATE THAT HAS TWO TABLES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+                               //NB! THIS WILL ONLY WORK WITH TEMPLATE THAT HAS ONLY ONE TABLES!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
                                                                
                                 //select Docs/Doc/DocContent/table/Row 
                                 List<string> tableCellKeyList = new List<string>();
@@ -350,7 +350,7 @@ namespace pdbot
                                     Aspose.Words.Tables.Row firstRow = null;
                                     foreach (XmlNode rowNode in rowNodes)
                                     {
-                                        //select the table to insert rows
+                                        //select the table to insert rows. 1 represents table no.
                                          table = (Aspose.Words.Tables.Table)docTemplate.GetChild(NodeType.Table, 1, true);
                                         //clone the first table row
                                          firstRow = (Aspose.Words.Tables.Row)table.LastRow.Clone(true);
@@ -363,10 +363,10 @@ namespace pdbot
 
                                             docTemplate.Range.Replace(cellKey, cellValue, false, false);
                                         }
-                                        //Inserting new table row after the current row (template row):
+                                        //Insert a new table row after the current row (template row):
                                         table.AppendChild(firstRow);
                                     }
-                                    //Delete the last template table row node
+                                    //Delete the last template table row after the table is created
                                     table.LastRow.Remove();
                                     
                                 }
@@ -418,7 +418,7 @@ namespace pdbot
                     Console.ReadKey();
                 }
 
-                //save pdbot control xml
+                //save pdbot control xml in the same temp folder as the produced documents
                 string outputfilename = outputFile.Remove(outputFile.Remove(outputFile.Length - 1).LastIndexOf('\\') + 1);
                 outputfilename = outputfilename + "pdbot_control.xml";
 
@@ -426,18 +426,18 @@ namespace pdbot
             }
             controlXMl = null;
 
-
-            Console.WriteLine("Time used: " + stopwatch.Elapsed.Seconds + "Seconds");
-            Console.ReadKey();
+            //stopwatch.Stop();
+            //Console.WriteLine("Time used: " + stopwatch.Elapsed.Seconds + " Seconds");
+            //Console.ReadKey();
             //---------------------------------------------------------------------------------------------------------------------------------------------
         }
 
+        //METHODS
         //method for saving document
         private static void saveDoc(Aspose.Words.Document document, string outputFile)
         {
-
             try
-            {                             
+            {
                 document.Save(outputFile);
                 writeToLog("Temporary document saved " + outputFile.ToString());
             }
@@ -447,6 +447,10 @@ namespace pdbot
                 writeToLog("Error saving temporary document " + e.StackTrace);
                 Console.ReadKey();
             }
+            finally 
+            {
+                document = null;
+            }    
 
         }
 
@@ -456,12 +460,12 @@ namespace pdbot
             try
             {
                 Aspose.Pdf.Document document = new Aspose.Pdf.Document(pdfDocumentPath);
-                Aspose.Pdf.Document hfl = new Aspose.Pdf.Document(hflDocumentPath); 
-                 //create page stamp
+                Aspose.Pdf.Document hfl = new Aspose.Pdf.Document(hflDocumentPath);
+                //create page stamp
                 PdfPageStamp pageStamp = null;
-                
+
                 foreach (var value in watermarkingValues)
-                {                   
+                {
                     string[] waterMark = value.Split('=');
 
                     string hflDocPageNo = waterMark[waterMark.Length - 1];
@@ -491,13 +495,13 @@ namespace pdbot
                         pageStamp = new PdfPageStamp(hfl.Pages[hflDocPageNumber]);
 
 
-                        if (docPageNumber <= document.Pages.Count )
+                        if (docPageNumber <= document.Pages.Count)
                         {
                             //add stamp to particular page
                             document.Pages[docPageNumber].AddStamp(pageStamp);
-                        }                    
-                        
-                    }                   
+                        }
+
+                    }
                 }
 
                 if (stampText.Length > 0)
@@ -514,19 +518,20 @@ namespace pdbot
                     //add stamp to particular page
                     document.Pages[1].AddStamp(textStamp);
                 }
-                
+
                 //finally save the pdf document
                 document.Save(pdfDocumentPath);
-                writeToLog("Final document " + document.FileName.ToString() + " Produced");                
-                
+                writeToLog("Final document " + document.FileName.ToString() + " Produced");
+
             }
             catch (Exception e)
             {
                 Console.WriteLine("Application PDBOT failed with error: " + e.Message + "." + e.StackTrace);
-                writeToLog("Error saving final document "  + e.StackTrace);
+                writeToLog("Error saving final document " + e.StackTrace);
                 Console.ReadKey();
-               
+
             }
+           
         }
 
         //manage linebreaks problematic in Aspose.words - remove page break and insert a new sectionbreaknewpage
@@ -543,7 +548,7 @@ namespace pdbot
                         builder.MoveTo(run);
                         builder.InsertBreak(BreakType.SectionBreakNewPage);
                         run.Remove();
-                        break;                
+                        break;              
                     
                     }
 
@@ -558,7 +563,7 @@ namespace pdbot
             System.IO.StreamWriter sw = null;
             try
             {
-                sw = System.IO.File.AppendText(@"C:\temp\PDBOT\Output\logFile.txt");
+                sw = System.IO.File.AppendText("logFile.txt");
                 string logLine = System.String.Format("{0:G}: {1}.", System.DateTime.Now, toLog);
                 sw.WriteLine(logLine);
             }
